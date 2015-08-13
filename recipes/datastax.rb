@@ -40,6 +40,11 @@ case node['platform_family']
 when 'debian'
   node.default['cassandra']['conf_dir']  = '/etc/cassandra'
 
+  execute "apt get update" do
+    command "apt-get update"
+    action :run
+  end
+
   if not node['cassandra']['dse']
     # DataStax Server Community Edition package will not install w/o this
     # one installed. MK.
