@@ -1,5 +1,5 @@
 #
-# Cookbook Name:: cassandra
+# Cookbook Name:: cassandra-dse
 # Recipe:: opscenter_server
 #
 # Copyright 2011-2012, Michael S Klishin & Travis CI Development Team
@@ -18,13 +18,20 @@
 #
 
 include_recipe 'java' if node['cassandra']['install_java']
-include_recipe 'cassandra::repositories'
+include_recipe 'cassandra-dse::repositories'
 
-package node['cassandra']['opscenter']['server']['package_name']
+ops = node['cassandra']['opscenter']
+ops_server = ops['server']
+
+package ops_server['package_name'] do
+  version ops['version']
+  options node['cassandra']['yum']['options'] if node['platform_family'] == 'rhel'
+end
 
 service 'opscenterd' do
   supports :restart => true, :status => true
   action [:enable, :start]
+  subscribes :restart, "package[#{ops_server['package_name']}]"
 end
 
 template '/etc/opscenter/opscenterd.conf' do

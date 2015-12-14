@@ -1,8 +1,8 @@
 #
-# Cookbook Name:: cassandra
+# Cookbook Name:: cassandra-dse
 # Recipe:: user
 #
-# Copyright 2014, Virender Khatri <vir.khatri@gmail.com>
+# Copyright 2014-2015, Virender Khatri <vir.khatri@gmail.com>
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,7 +18,9 @@
 #
 
 group node['cassandra']['group'] do
-  system node['cassandra']['system_user']
+  system node['cassandra']['system_user'] # ~FC048
+  append true
+  only_if { node['cassandra']['setup_user'] }
   action :create
 end
 
@@ -26,7 +28,17 @@ user node['cassandra']['user'] do
   comment 'Cassandra Server user'
   gid node['cassandra']['group']
   home node['cassandra']['user_home'] if node['cassandra']['user_home']
-  system node['cassandra']['system_user']
+  system node['cassandra']['system_user'] # ~FC048
   shell '/bin/bash'
+  only_if { node['cassandra']['setup_user'] }
   action :create
+end
+
+group "explicity add #{node['cassandra']['user']} to #{node['cassandra']['group']} group" do
+  group_name node['cassandra']['group']
+  system node['cassandra']['system_user'] # ~FC048
+  members [node['cassandra']['user']]
+  append true
+  only_if { node['cassandra']['setup_user'] }
+  action :modify
 end

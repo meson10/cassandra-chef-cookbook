@@ -1,4 +1,130 @@
-## New Release 2.7.x
+## Changes Between 4.1.0 and 4.1.x
+
+### additional chefspec tests to at least cover all resources
+
+Tested with chef 0.9.0 but prior and later versions should still work.
+
+run with
+```
+rake unit
+```
+
+Contributed by Bill Warner.
+
+## Changes Between 4.0.0 and 4.1.0
+
+### Priam Support
+
+See `node[:cassandra][:setup_priam]` and related node attributes.
+
+Contributed by Scott McMaster.
+
+
+### init.d Script Fix (Debian)
+
+Node IP address is now correctly passed to `nodetool`.
+
+Contributed by Scott McMaster.
+
+### Default Seed Discovery Fix
+
+Default seed discovery query will now respect `node[:cassandra][:config][:cluster_name]`.
+
+Contributed by Robert Berger.
+
+### jamm Version Fix
+
+The cookbook will now pick the correct jamm version for the Cassandra
+version it is asked to provision.
+
+Contributed by Robert Berger.
+
+
+## Changes Between 3.5.0 and 4.0.0
+
+`4.0.0` has **breaking changes in attribute structure**.
+
+### Node Config Attributes Moved
+
+Node configuration attributes are now under `node['cassandra']['config']`. Since
+there are many of them, please [consult the default attributes file](https://github.com/michaelklishin/cassandra-chef-cookbook/blob/master/attributes/config.rb).
+
+### SHA 256 Checksums
+
+SHA256 is now used instead of MD5 for checksums. The cookbook
+now provides checksums for Cassandra versions up to 2.2.0.
+
+### 2.2.0 by Default
+
+The cookbook now provisions Cassandra 2.2.0 by default.
+
+
+## Changes Between 3.4.0 and 3.5.0
+
+### Seed Discovery Using Chef Search
+
+The cookbook will now use Chef search to discover seed nodes.
+The exact query used is configurable. Search is disabled by default.
+
+GH issues: [#204](https://github.com/michaelklishin/cassandra-chef-cookbook/issues/204),
+[#205](https://github.com/michaelklishin/cassandra-chef-cookbook/pull/205).
+
+The following node attribute snippet enables Chef search and will list
+IP addresses of nodes with roles `cassandra` and `cassandra-seed`:
+
+``` json
+  "cassandra": {
+    "seed_discovery": {
+      "use_chef_search": true,
+      "search_query": "role:cassandra-seed OR role:cassandra"
+    }
+  }
+```
+
+
+### `:data_dir` Array Handling
+
+`cassandra-dse::tarball` now handles arrays of data dirs.
+
+Contributed by Bryce Lynn.
+
+GH issue: [#154](https://github.com/michaelklishin/cassandra-chef-cookbook/issues/154).
+
+
+
+## Changes Between 3.3.0 and 3.4.0
+
+### FD_LIMIT in Init Script
+
+`FD_LIMIT` value in the init script is now corrently
+set to the `node[:cassandra][:limits][:nofile]` value.
+
+Contributed by Rich Schumacher.
+
+GH issue: [#201](https://github.com/michaelklishin/cassandra-chef-cookbook/pull/201).
+
+
+
+## Changes Between 3.2.0 and 3.3.0
+
+### Ensure conf Directory Exists
+
+If Cassandra conf directory doesn't exist, it will be created.
+
+Contributed by Ahmed Ferdous.
+
+
+## Changes Between 2.7.x and 3.2.0
+
+The cookbook has a new name: `cassandra-dse`, and is [available from
+Chef Supermarket](https://supermarket.chef.io/cookbooks/cassandra-dse).
+
+Main recipe names is therefore now `cassandra-dse::default`.
+
+Multiple bug fixes.
+
+
+## Changes Between 2.7.0 and 2.7.x
 
 * Virender Khatri: Updated README for v2.1
 * Virender Khatri: C* version 2.1.x version support

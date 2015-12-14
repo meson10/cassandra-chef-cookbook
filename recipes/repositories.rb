@@ -1,5 +1,5 @@
 #
-# Cookbook Name:: cassandra
+# Cookbook Name:: cassandra-dse
 # Recipe:: datastax
 #
 # Copyright 2011-2012, Michael S Klishin & Travis CI Development Team
@@ -28,10 +28,8 @@ end
 
 case node['platform_family']
 when 'debian'
-  if node['cassandra']['dse']
-    package 'apt-transport-https'
-  end
-  
+  package 'apt-transport-https'
+
   apt_repository node['cassandra']['apt']['repo'] do
     if node['cassandra']['dse']
       uri "https://#{dse_credentials['username']}:#{dse_credentials['password']}@debian.datastax.com/enterprise"
@@ -45,7 +43,7 @@ when 'debian'
   end
 when 'rhel'
   include_recipe 'yum'
-  
+
   yum_repository node['cassandra']['yum']['repo'] do
     if node['cassandra']['dse']
       baseurl "https://#{dse_credentials['username']}:#{dse_credentials['password']}@rpm.datastax.com/enterprise"
@@ -53,7 +51,7 @@ when 'rhel'
       baseurl node['cassandra']['yum']['baseurl']
     end
     description node['cassandra']['yum']['description']
-    mirrorlist node['cassandra']['yum']['mirrorlist']
+    mirrorlist node['cassandra']['yum']['mirrorlist'] unless node['cassandra']['yum']['mirrorlist'].nil?
     gpgcheck node['cassandra']['yum']['gpgcheck']
     enabled node['cassandra']['yum']['enabled']
     action node['cassandra']['yum']['action']

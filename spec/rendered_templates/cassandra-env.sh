@@ -138,13 +138,8 @@ esac
 # times. If in doubt, and if you do not particularly want to tweak, go with
 # 100 MB per physical CPU core.
 
-<% if node['cassandra']['max_heap_size'] && node['cassandra']['heap_new_size'] %>
-MAX_HEAP_SIZE="<%= node['cassandra']['max_heap_size'] %>"
-HEAP_NEWSIZE="<%= node['cassandra']['heap_new_size'] %>"
-<% else %>
 #MAX_HEAP_SIZE="4G"
 #HEAP_NEWSIZE="800M"
-<% end %>
 
 # Set this to control the amount of arenas per-thread in glibc
 #MALLOC_ARENA_MAX=4
@@ -165,7 +160,7 @@ fi
 
 # Specifies the default port over which Cassandra will be available for
 # JMX connections.
-JMX_PORT="<%= node['cassandra']['jmx_port'] %>"
+JMX_PORT="7199"
 
 
 # Here we create the arguments that will get passed to the jvm when
@@ -173,25 +168,17 @@ JMX_PORT="<%= node['cassandra']['jmx_port'] %>"
 
 # enable assertions.  disabling this in production will give a modest
 # performance benefit (around 5%).
-<% if node['cassandra']['enable_assertions'] %>
 JVM_OPTS="$JVM_OPTS -ea"
-<% else %>
-#JVM_OPTS="$JVM_OPTS -ea"
-<% end %>
 
-<% if node['cassandra']['jamm']['version'] -%>
 # add the jamm javaagent
 if [ "$JVM_VENDOR" != "OpenJDK" -o "$JVM_VERSION" \> "1.6.0" ] \
       || [ "$JVM_VERSION" = "1.6.0" -a "$JVM_PATCH_VERSION" -ge 23 ]
 then
-  JVM_OPTS="$JVM_OPTS -javaagent:$CASSANDRA_HOME/lib/jamm-<%= node['cassandra']['jamm']['version'] -%>.jar"
+  JVM_OPTS="$JVM_OPTS -javaagent:$CASSANDRA_HOME/lib/jamm-0.3.1.jar"
 fi
-<% end -%>
 
-<% if node['cassandra']['setup_priam'] -%>
 # add the priam cass extensions javaagent
-  JVM_OPTS="$JVM_OPTS -javaagent:$CASSANDRA_HOME/lib/priam-cass-extensions-<%= node['cassandra']['version'] -%>.jar"
-<% end -%>
+  JVM_OPTS="$JVM_OPTS -javaagent:$CASSANDRA_HOME/lib/priam-cass-extensions-2.2.0.jar"
 
 # some JVMs will fill up their heap when accessed via JMX, see CASSANDRA-6541
 JVM_OPTS="$JVM_OPTS -XX:+CMSClassUnloadingEnabled"
@@ -209,39 +196,19 @@ JVM_OPTS="$JVM_OPTS -XX:ThreadPriorityPolicy=42"
 # out.
 #
 # -Xms
-<% if node['cassandra']['jvm'] && node['cassandra']['jvm']['xms'] -%>
-# (set via node.cassandra.jvm.xms)
-JVM_OPTS="$JVM_OPTS -Xms<%= node['cassandra']['jvm']['xms'] %>"
-<% else -%>
 # (set via node['cassandra']['max_heap_size'])
 JVM_OPTS="$JVM_OPTS -Xms${MAX_HEAP_SIZE}"
-<% end -%>
 
 # -Xmx
-<% if node['cassandra']['jvm'] && node['cassandra']['jvm']['xmx'] -%>
-# (set via node['cassandra']['jvm']['xmx'])
-JVM_OPTS="$JVM_OPTS -Xmx<%= node['cassandra']['jvm']['xmx'] %>"
-<% else -%>
 # (set via node['cassandra']['max_heap_size'])
 JVM_OPTS="$JVM_OPTS -Xmx${MAX_HEAP_SIZE}"
-<% end -%>
 
 # -Xmn
-<% if node['cassandra']['jvm'] && node['cassandra']['jvm']['xmn'] -%>
-# (set via node['cassandra']['jvm']['xmn'])
-JVM_OPTS="$JVM_OPTS -Xmn<%= node['cassandra']['jvm']['xmn'] %>"
-<% else -%>
 # (set via node['cassandra']['heap_new_size'])
 JVM_OPTS="$JVM_OPTS -Xmn${HEAP_NEWSIZE}"
-<% end -%>
 
-<% if node['cassandra']['heap_dump'] -%>
 JVM_OPTS="$JVM_OPTS -XX:+HeapDumpOnOutOfMemoryError"
-<% end -%>
 
-<% if node['cassandra']['heap_dump_dir'] -%>
-CASSANDRA_HEAPDUMP_DIR=<%= node['cassandra']['heap_dump_dir'] %>
-<% end -%>
 # set jvm HeapDumpPath with CASSANDRA_HEAPDUMP_DIR
 if [ "x$CASSANDRA_HEAPDUMP_DIR" != "x" ]; then
     JVM_OPTS="$JVM_OPTS -XX:HeapDumpPath=$CASSANDRA_HEAPDUMP_DIR/cassandra-`date +%s`-pid$$.hprof"
@@ -256,7 +223,7 @@ if [ "`uname`" = "Linux" ] ; then
     # be pooled anyway.) Only do so on Linux where it is known to be
     # supported.
     # u34 and greater need 180k
-    JVM_OPTS="$JVM_OPTS -Xss<%= node['cassandra']['xss'] %>"
+    JVM_OPTS="$JVM_OPTS -Xss256k"
 fi
 
 # Larger interned string table, for gossip's benefit (CASSANDRA-6410)
@@ -264,21 +231,14 @@ JVM_OPTS="$JVM_OPTS -XX:StringTableSize=1000003"
 
 # GC tuning options
 # -Xmx
-<% if node['cassandra']['jvm'] && node['cassandra']['jvm']['g1'] -%>
-JVM_OPTS="$JVM_OPTS -XX:+UseG1GC"
-JVM_OPTS="$JVM_OPTS -XX:SurvivorRatio=<%= node['cassandra']['gc_survivor_ratio'] %>"
-JVM_OPTS="$JVM_OPTS -XX:MaxTenuringThreshold=<%= node['cassandra']['gc_max_tenuring_threshold'] %>"
-JVM_OPTS="$JVM_OPTS -XX:+UseTLAB"
-<% else -%>
 JVM_OPTS="$JVM_OPTS -XX:+UseParNewGC"
 JVM_OPTS="$JVM_OPTS -XX:+UseConcMarkSweepGC"
 JVM_OPTS="$JVM_OPTS -XX:+CMSParallelRemarkEnabled"
-JVM_OPTS="$JVM_OPTS -XX:SurvivorRatio=<%= node['cassandra']['gc_survivor_ratio'] %>"
-JVM_OPTS="$JVM_OPTS -XX:MaxTenuringThreshold=<%= node['cassandra']['gc_max_tenuring_threshold'] %>"
-JVM_OPTS="$JVM_OPTS -XX:CMSInitiatingOccupancyFraction=<%= node['cassandra']['gc_cms_initiating_occupancy_fraction'] %>"
+JVM_OPTS="$JVM_OPTS -XX:SurvivorRatio=8"
+JVM_OPTS="$JVM_OPTS -XX:MaxTenuringThreshold=1"
+JVM_OPTS="$JVM_OPTS -XX:CMSInitiatingOccupancyFraction=75"
 JVM_OPTS="$JVM_OPTS -XX:+UseCMSInitiatingOccupancyOnly"
 JVM_OPTS="$JVM_OPTS -XX:+UseTLAB"
-<% end -%>
 
 
 # note: bash evals '1.7.x' as > '1.7' so this is really a >= 1.7 jvm check
@@ -287,19 +247,6 @@ if [ "$JVM_VERSION_SHORT" = "1.7" ] && [ "$JVM_ARCH" = "64-Bit" ] ; then
     JVM_OPTS="$JVM_OPTS -XX:+UseCondCardMark"
 fi
 
-<% if node['cassandra']['jvm'] && node['cassandra']['jvm']['gcdetail'] -%>
-JVM_OPTS="$JVM_OPTS -XX:+PrintGCDetails"
-JVM_OPTS="$JVM_OPTS -XX:+PrintGCDateStamps"
-JVM_OPTS="$JVM_OPTS -XX:+PrintHeapAtGC"
-JVM_OPTS="$JVM_OPTS -XX:+PrintTenuringDistribution"
-JVM_OPTS="$JVM_OPTS -XX:+PrintGCApplicationStoppedTime"
-JVM_OPTS="$JVM_OPTS -XX:+PrintPromotionFailure"
-JVM_OPTS="$JVM_OPTS -XX:PrintFLSStatistics=1"
-JVM_OPTS="$JVM_OPTS -Xloggc:<%= node['cassandra']['log_dir'] %>/gc.log"
-JVM_OPTS="$JVM_OPTS -XX:+UseGCLogFileRotation"
-JVM_OPTS="$JVM_OPTS -XX:NumberOfGCLogFiles=10"
-JVM_OPTS="$JVM_OPTS -XX:GCLogFileSize=10M"
-<% else -%>
 # GC logging options -- uncomment to enable
 # JVM_OPTS="$JVM_OPTS -XX:+PrintGCDetails"
 # JVM_OPTS="$JVM_OPTS -XX:+PrintGCDateStamps"
@@ -315,7 +262,6 @@ JVM_OPTS="$JVM_OPTS -XX:GCLogFileSize=10M"
 # JVM_OPTS="$JVM_OPTS -XX:+UseGCLogFileRotation"
 # JVM_OPTS="$JVM_OPTS -XX:NumberOfGCLogFiles=10"
 # JVM_OPTS="$JVM_OPTS -XX:GCLogFileSize=10M"
-<% end -%>
 
 # note: bash evals '1.7.x' as > '1.7' so this is really a >= 1.7 jvm check
 JVM_VERSION_SHORT=$(printf "%.3s" $JVM_VERSION)
@@ -335,24 +281,12 @@ JVM_OPTS="$JVM_OPTS -Djava.net.preferIPv4Stack=true"
 # jmx: metrics and administration interface
 #
 # add this if you're having trouble connecting:
-<% if node['cassandra']['jmx_server_hostname'] %>
-JVM_OPTS="$JVM_OPTS -Djava.rmi.server.hostname=<%= node['cassandra']['jmx_server_hostname'] %>"
-<% else %>
 # JVM_OPTS="$JVM_OPTS -Djava.rmi.server.hostname=<public name>"
-<% end %>
 
 # support for metrics reporter:
-<% if node['cassandra']['metrics_reporter']['enabled'] %>
 JVM_OPTS="$JVM_OPTS -Dcassandra.metricsReporterConfigFile=cassandra-metrics.yaml"
-<% end %>
 
-<% if node['cassandra']['skip_jna'] %>
-JVM_OPTS="$JVM_OPTS -Dcassandra.boot_without_jna=true"
-<% end %>
 
-<% if node['cassandra']['local_jmx'] %>
-JVM_OPTS="$JVM_OPTS -Dcassandra.jmx.local.port=$JMX_PORT -XX:+DisableExplicitGC"
-<% else %>
 #
 # see
 # https://blogs.oracle.com/jmxetc/entry/troubleshooting_connection_problems_in_jconsole
@@ -362,7 +296,6 @@ JVM_OPTS="$JVM_OPTS -Dcom.sun.management.jmxremote.port=$JMX_PORT"
 JVM_OPTS="$JVM_OPTS -Dcom.sun.management.jmxremote.rmi.port=$JMX_PORT"
 JVM_OPTS="$JVM_OPTS -Dcom.sun.management.jmxremote.ssl=false"
 JVM_OPTS="$JVM_OPTS -Dcom.sun.management.jmxremote.authenticate=false"
-<% end %>
 # see https://issues.apache.org/jira/browse/CASSANDRA-6541
 JVM_OPTS="$JVM_OPTS -XX:+CMSClassUnloadingEnabled"
 JVM_OPTS="$JVM_OPTS $JVM_EXTRA_OPTS"

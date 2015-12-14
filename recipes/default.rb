@@ -1,8 +1,8 @@
 #
-# Cookbook Name:: cassandra
+# Cookbook Name:: cassandra-dse
 # Recipe:: default
 #
-# Copyright 2011-2012, Michael S Klishin & Travis CI Development Team
+# Copyright 2011-2015, Michael S Klishin & Travis CI Development Team
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,4 +17,16 @@
 # limitations under the License.
 #
 
-include_recipe 'cassandra::datastax'
+fail "attribute node['cassandra']['config']['cluster_name'] not defined" unless node['cassandra']['config']['cluster_name']
+
+# discover cluster nodes via chef search
+node.default['cassandra']['seeds'] = discover_seed_nodes
+
+# setup java
+include_recipe 'java' if node['cassandra']['install_java']
+
+# install C* via datastax / tarball
+include_recipe "cassandra-dse::#{node['cassandra']['install_method']}"
+
+# configues C*
+include_recipe 'cassandra-dse::config'
