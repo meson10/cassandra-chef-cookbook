@@ -20,12 +20,16 @@
 
 # These properties are used with GossipingPropertyFileSnitch and will
 # indicate the rack and dc for this node
+<% case node.cassandra.config.endpoint_snitch
+when 'GossipingPropertyFileSnitch' %>
 dc=<%= @rackdc['dc'] %>
 rack=<%= @rackdc['rack'] %>
 
+<% when 'Ec2Snitch', 'Ec2MultiRegionSnitch' %>
 # Add a suffix to a datacenter name. Used by the Ec2Snitch and Ec2MultiRegionSnitch
 # to append a string to the EC2 region name.
-#dc_suffix=
+dc_suffix=<%= @rackdc['dc_suffix']%>
+<% end %>
 
 # Uncomment the following line to make this snitch prefer the internal ip when possible, as the Ec2MultiRegionSnitch does.
 prefer_local=<%= @rackdc['prefer_local'] or false %>
