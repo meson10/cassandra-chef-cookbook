@@ -62,8 +62,11 @@ include_recipe 'cassandra-dse::repositories'
 # setup repository and install datastax C* packages
 case node['platform_family']
 when 'debian'
-  node.default['cassandra']['conf_dir'] = '/etc/cassandra'
-
+  if node['cassandra']['dse']
+    node.default['cassandra']['conf_dir'] = '/etc/dse/cassandra'
+  else
+    node.default['cassandra']['conf_dir'] = '/etc/cassandra'
+  end
   execute "apt get update" do
     command "apt-get update"
     action :run
@@ -87,9 +90,9 @@ when 'debian'
     end
   end
 
-  package 'cassandra' do
-    version node['cassandra']['version']
-  end
+#  package 'cassandra' do
+#    version node['cassandra']['version']
+#  end
 
   package node['cassandra']['package_name'] do
     action :install
