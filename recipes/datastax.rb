@@ -98,11 +98,18 @@ when 'debian'
     action :install
     options '--force-yes -o Dpkg::Options::="--force-confold"'
     version "#{node['cassandra']['version']}-#{node['cassandra']['release']}"
-    # giving C* some time to start up
+    notifies :run, 'ruby_block[post_install]', :immediately
+  end
+
+  ruby_block 'post_install' do
+    block do
+    end
     notifies :start, 'service[cassandra]', :immediately
+    # giving C* some time to start up
     notifies :run, 'ruby_block[sleep30s]', :immediately
     notifies :run, 'ruby_block[set_fd_limit]', :immediately
     notifies :run, 'execute[set_cluster_name]', :immediately
+    not_if { node['cassandra']['service_action'] == 'stop' }
   end
 
   ruby_block 'sleep30s' do
